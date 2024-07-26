@@ -1,0 +1,187 @@
+basePath: /
+definitions:
+  model.ApiError:
+    properties:
+      error:
+        type: string
+    type: object
+  model.EntangleFeedProofsResponse:
+    properties:
+      calldata:
+        $ref: '#/definitions/model.EntangleFeedsProofsView'
+      error:
+        type: string
+    type: object
+  model.EntangleFeedsProofsCalldata:
+    properties:
+      address:
+        description: PullOracle contract address, represented as a hex string with
+          0x prefix
+        type: string
+      calldata:
+        description: Calldata is the encoded data as a hex string with 0x prefix
+        type: string
+      method:
+        description: Contract method signature, e.g. "updateMultipleAssets(bytes)"
+        type: string
+    type: object
+  model.EntangleFeedsProofsView:
+    properties:
+      feeds:
+        description: Feeds is the list of feed proofs
+        items:
+          $ref: '#/definitions/model.FeedProof'
+        type: array
+      merkleRoot:
+        description: MerkleRoot is the root hash of the Merkle tree of the assets,
+          represented as a hex string with 0x prefix
+        type: string
+      signatures:
+        description: Signatures is the list of signatures, represented as R, S and
+          V values
+        items:
+          $ref: '#/definitions/model.HashEncodedSignatureDocView'
+        type: array
+    type: object
+  model.FeedProof:
+    properties:
+      key:
+        description: Key is the asset key, e.g. "NGL/USD"
+        type: string
+      merkleProofs:
+        description: MerkleProofs is the list of Merkle proofs
+        items:
+          items:
+            type: integer
+          type: array
+        type: array
+      value:
+        allOf:
+        - $ref: '#/definitions/model.Value'
+        description: Value is the feed value with data and timestamp
+    type: object
+  model.HashEncodedSignatureDocView:
+    properties:
+      r:
+        type: string
+      s:
+        type: string
+      v:
+        type: integer
+    type: object
+  model.SpotterInfo:
+    properties:
+      assets:
+        description: Assets is the list of assets the spotter is watching, e.g. "NGL/USD"
+        items:
+          type: string
+        type: array
+      id:
+        description: ID is the unique identifier of the spotter, e.g. "price-feed",
+          "gas-feed"
+        type: string
+      networks:
+        description: Networks are supported by spotters, for further calldata generation
+        items:
+          type: string
+        type: array
+    type: object
+  model.Value:
+    properties:
+      data:
+        description: Data is the feed value, represented as a byte array
+        items:
+          type: integer
+        type: array
+      timestamp:
+        description: Timestamp is the unix timestamp
+        type: integer
+    type: object
+host: pricefeed.entangle.fi
+info:
+  contact: {}
+  title: Finalized Data API
+  version: "1.0"
+paths:
+  /spotters:
+    get:
+      description: Show spotters list with their id, supported assets and networks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.SpotterInfo'
+            type: array
+      summary: Show live spotters
+  /spotters/{spotterID}:
+    get:
+      parameters:
+      - description: Spotter ID
+        in: path
+        name: spotterID
+        required: true
+        type: string
+      - description: Assets key list
+        example: NGL/USD,ETH/USD
+        in: query
+        name: assets
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.EntangleFeedProofsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Show certain spotter's assets list in more detail view
+  /spotters/{spotterID}/{network}/calldata:
+    get:
+      description: Show method, calldata, contract address for specific network
+      parameters:
+      - description: Spotter ID
+        in: path
+        name: spotterID
+        required: true
+        type: string
+      - description: Blockchain network
+        in: path
+        name: network
+        required: true
+        type: string
+      - description: Assets key list
+        example: NGL/USD,ETH/USD
+        in: query
+        name: assets
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.EntangleFeedsProofsCalldata'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ApiError'
+      summary: Show certain spotter's assets list in calldata view for specific network
+schemes:
+- https
+swagger: "2.0"
